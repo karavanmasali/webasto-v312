@@ -2,15 +2,21 @@
 export const MIN_GAP = 2;
 export const LIMITS = Object.freeze({ startMin: 10, startMax: 38, stopMin: 12, stopMax: 40, targetMin: 10, targetMax: 40 });
 export const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
+/** Eşikler bağımsızdır; sadece 2°C sınırına temas edilirse karşı eşik de kayar. */
 export function changeStart(cfg, delta) {
   const next = {...cfg};
-  next.start = clamp(cfg.start + delta, LIMITS.startMin, Math.min(LIMITS.startMax, cfg.stop - MIN_GAP));
+  next.start = clamp(cfg.start + delta, LIMITS.startMin, LIMITS.startMax);
+  // 19/21 → START+ → 20/22; geniş farkta STOP sabit kalır.
+  next.stop = clamp(Math.max(cfg.stop, next.start + MIN_GAP), LIMITS.stopMin, LIMITS.stopMax);
+  if (next.auto) next.target = next.stop;
   return next;
 }
 export function changeStop(cfg, delta) {
   const next = {...cfg};
-  next.stop = clamp(cfg.stop + delta, Math.max(LIMITS.stopMin, cfg.start + MIN_GAP), LIMITS.stopMax);
-  if (cfg.auto) next.target = next.stop;
+  next.stop = clamp(cfg.stop + delta, LIMITS.stopMin, LIMITS.stopMax);
+  // 19/21 → STOP- → 18/20; geniş farkta START sabit kalır.
+  next.start = clamp(Math.min(cfg.start, next.stop - MIN_GAP), LIMITS.startMin, LIMITS.startMax);
+  if (next.auto) next.target = next.stop;
   return next;
 }
 export function updateAuto(cfg, enabled) {
@@ -24,8 +30,8 @@ export function safeConfig(raw) {
     if (Number.isFinite(raw.target)) cfg.target = clamp(Math.round(raw.target), LIMITS.targetMin, LIMITS.targetMax);
     if ([10,20,30,60].includes(raw.stopDelay)) cfg.stopDelay = raw.stopDelay;
     if ([120,180,300,600].includes(raw.restartDelay)) cfg.restartDelay = raw.restartDelay;
-    // Güvenlik: Yeniden yükleme sonrası otomatik kontrol kendi kendine açılmaz.
-    cfg.auto = false;
+    // Tercih saklanır; fiziksel kontrol her yeni oturumda ayrıca etkinleştirilir.
+    cfg.auto = raw.auto === true;
   }
   return cfg;
 }
