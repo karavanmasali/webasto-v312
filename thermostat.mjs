@@ -24,8 +24,8 @@ export function safeConfig(raw) {
     if (Number.isFinite(raw.target)) cfg.target = clamp(Math.round(raw.target), LIMITS.targetMin, LIMITS.targetMax);
     if ([10,20,30,60].includes(raw.stopDelay)) cfg.stopDelay = raw.stopDelay;
     if ([120,180,300,600].includes(raw.restartDelay)) cfg.restartDelay = raw.restartDelay;
-    // Tercih saklanır; fiziksel kontrol her yeni oturumda ayrıca etkinleştirilir.
-    cfg.auto = raw.auto === true;
+    // Güvenlik: Yeniden yükleme sonrası otomatik kontrol kendi kendine açılmaz.
+    cfg.auto = false;
   }
   return cfg;
 }

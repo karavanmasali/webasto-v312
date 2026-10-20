@@ -1,28 +1,24 @@
-# Karavan Webasto V3.12 — Üç Sekmeli Web Kontrolü
+# Karavan Webasto V3.3 — kontrollü START testi
 
-Bu paket **V3.11 web sürümünün** üzerine hazırlanmıştır. START / STOP / sıcaklık hedefi için kullanıcı tarafından doğrulanan BLE protokol dosyaları (`ble.js`, `protocol.mjs`, `command-profile.mjs`) ve termostat motorları (`auto-engine.mjs`, `thermostat.mjs`) V3.11 ile **aynıdır**.
+**Deneysel sürüm.** RE5011 üzerinde gerçek START henüz doğrulanmadı. Fiziksel ısıtıcıyı yalnızca yanında, yeterli havalandırma ve CO alarmı varken test edin. Otomatik termostat Bluetooth bağlantısında kapalıdır. iPhone arka planda güvenilir çalışma sağlamaz.
 
-## V3.12 yenilikleri
+## Neler değişti?
+- Hedef sıcaklığı +/− aralığı 10–40°C (HeatGenie kullanıcı kılavuzundaki aralık) ve demo START/STOP sınırları buna uygun.
+- STOP/CLEAR (`AA 00 61 02 FF 00 25 D3`) ve hedef gönderim komutlarının biçimi değiştirilmedi.
+- START testi: **önce sabit sıcaklık modu** (`AA 00 66 00 00 00 19 61`) bir kere gönderiliyor, 3A00 durum raporu gözleniyor, sonra **tek START** (`AA 00 61 01 FF 00 7C 83`) gönderiliyor. Yeni sıra RE5011 donanımında DOĞRULANMADI. Isıtıcı diğer moddaysa veya fan/pompa/kızdırma çalışıyorsa test iptal edilir.
+- Başlatmadan önce/sonra durum adımı ve *kayıt34* değişimi tanılama dosyasında gösteriliyor. Kayıt34 alanının anlamı henüz belirlenmedi.
+- Otomatik tekrar yok; GATT yazma onayı ateşlemenin gerçekleştiği anlamına gelmez.
 
-1. `Gerçek Webasto komutlarına izin veriyorum` kutusu ve buna bağlı çift izin engeli kaldırıldı.
-2. Otomatik moda **KAPALI → AÇIK** geçişte kullanıcıdan tek kez açık onay istenir. Bağlı değilken de bu tercih onaylanıp kaydedilebilir.
-3. Otomatik mod onaylı bir kez açıldıktan sonra sayfa yenilense, Bluetooth bağlantısı kopsa, otomatik START/STOP döngüsü yaşansa veya bağlantı tekrar sağlansa da **AÇIK** saklanır. Sadece kullanıcı otomatik anahtarı kapatırsa tercih kapanır. Manuel START/STOP da otomatiği kapatır.
-4. Manuel START/STOP, düğmeye basıldığında ikinci bir onay sorusu olmadan gönderilir. Komut öncesi cihaz ve bağlantı güvenlik denetimleri korunur.
-5. Bluetooth kesildiğinde gönderim durur. BLE otomatik tekrar bağlanabiliyorsa denemeleri sürdürür. Tekrar bağlandığında CRC-doğrulanmış *yeni* durum ile mevcut çalışma/kapalı/soğutma durumu değerlendirilir ve otomatik kontrol eski eşiklerden devam eder. **Bağlantı yokken Webasto kontrol edilmez.**
-6. Cihaz hata bildirirse otomatik kontrol, kullanıcı tercihinin tikini silmeden **güvenlik duraklatması** durumuna geçer. Sorun giderildikten sonra kullanıcı bilerek yeniden etkinleştirebilir.
-7. Bluetooth'u kullanıcı kendisi kapatırsa bile saklı otomatik mod AÇIK kalır; yeniden el ile bağlanınca kontrol devam edebilir.
-8. Kontrol / Geçmiş / Ayarlar sekmeleri, olay geçmişi, sıcaklık grafiği ve sessiz bildirim seçeneği korundu.
+## GitHub
+ZIP'i çıkarıp tüm dosyaları `karavanmasali/webasto-v3` deponun **köküne** yükle (`Add file` → `Upload files` → `Commit changes`). `main` ve `/(root)` Pages ayarları aynı kalır. `.nojekyll` değişmiyorsa yeniden oluşturma. Sitede Ctrl+Shift+R yap ve başlığın `V3.3 START TEST` olduğunu kontrol et.
 
-## GitHub Pages kurulumu
+## Deneme
+1. Isıtıcının normal soğutmasını tamamladığını, fan/pompa/kızdırmanın kapalı olduğunu kontrol et. Bluetooth bağlı ve hata kodu sıfır olsun.
+2. Manuel test onayını aç; önce hedef +/− ile bir kez cihazdan geri okuma testini tamamla.
+3. `START (SABİT MOD TEST)` düğmesine **bir kere** bas. Her komut iki ayrı GATT yazması içeren onaylı bir testtir; ekranda ve gerçek cihazda ateşleme başlayıp başlamadığını izle.
+4. Başlamazsa başka deneme yapma. `Tanı kayıtlarını indir` çıktısını paylaş. Başlarsa çalışmasını fiziksel olarak teyit et; STOP/CLEAR ile normal soğutma tamamlat.
 
-1. GitHub'da `webasto-v312` adlı **Public** yeni depo oluştur.
-2. ZIP içindeki 14 dosyayı deponun **ana dizinine** yükle. `index.html` kökte bulunmalı.
-3. Settings → Pages → Deploy from a branch → `main` ve `/(root)` → Save.
-4. Yayınlandıktan sonra `https://karavanmasali.github.io/webasto-v312/` adresini aç; önce demo, ardından gerçek RE5011 üzerinde gözetimli deneme yap.
+## Kanıt ve sınırlar
+Önceki V3.2 kaydında 20:55:08'de START GATT yazması başarılıydı, ama cihazın durum adımı 5'te kalmıştı; durum paketinde ham kayıt34 02→01 değişmişti. Bu alan için protokol belgesi anlam belirtmiyor. Bu nedenle "START kabul edildi" veya "başlatma düzeldi" sonucunu peşinen iddia etmiyoruz.
 
-## Önemli sınırlamalar
-
-- Web Bluetooth, çoğunlukla masaüstü Chrome/Edge gibi desteklenen tarayıcılarda çalışır. **Yeniden bağlanma** mevcut sayfa açık ve tarayıcı çalışır durumdayken denenir; tarayıcı/sekme kapanınca veya web sitesi yeniden açılınca cihaz seçimi yeniden gerekebilir.
-- Ekrandaki otomatik mod tercihi **açık** görünse de gerçek kontrol yalnızca Bluetooth bağlı, veri güncel ve güvenlik kilidi yokken çalışır. Bağlantı koparsa ısıtıcı çalışmaya devam edebilir; telefon/PC uzaktayken otomatik STOP yapılamaz.
-- Demo testleri gerçek cihaz davranışını kanıtlamaz. Soğutma ve hatalı bağlanma durumlarını gerçek cihazda ayrıca kontrollü test edin.
-- Uygun egzoz, havalandırma ve çalışan CO alarmı olmadan gözetimsiz/gece kullanımına geçmeyin. Bu sürüm cihazın kendi güvenlik mekanizmalarını değiştirmez.
+Komut profili: `diesel-heater-ble 0.3.8 / ProtocolHeatGenie`, MIT (LICENSE-THIRD-PARTY.txt). HeatGenie 10–40°C limit kaynağı: https://www.dieselheat.com.au/dieselheat-2-2kw-air-heatgenie-app-user-guide/
